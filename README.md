@@ -3,6 +3,11 @@ A powerful Grotto search tool created by using Claude and Gemini.
 
 Based on reverse-engineered database, dq9tmap101.exe's ElistOfs logic, and some edge cases fixed by TKG and Claude.
 
+Improvements
+- Fixed misjudgments (such as misjudging Single Monster Floor into No-enemy Floor, etc.) by fixing ElistOfs logic by TKG
+- Fixed Softlock (危険？ハマる地図 in Japanese, floor Seed 0x5BC7)'s by fixing reverse-engineered database by Claude
+- Deciphered Multibug phenomenon and implemented Multibug special floor searching by Claude and Gemini
+
 For details, please see Disclaimer inside the tool.
 
 # Available Search Functions
@@ -12,7 +17,7 @@ Ultimate search
 - Environment, SMR(B1 Monster Rank), Depth, Boss
 - Location, Base Quality
 - Chest counts by various Chest rank
-- ElistOfs (Wandering Monster Floor Status - fixed misjudgments by TKG)
+- ElistOfs (Wandering Monster Floor Status)
 - Single monster floor (Only)
 
 Other searches
