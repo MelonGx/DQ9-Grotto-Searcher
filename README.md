@@ -19,7 +19,7 @@ Ultimate search
 - Chest amount in each Chest rank
 - Wandering Monster bugged floor status (ElistOfs)
 - Single monster floor (Only)
-- Nipple Map (乳首, inaccessible chest), Chamber Map (イケない通路, inaccessible area)
+- Nipple Map (inaccessible chest), Chamber Map (inaccessible area)
 
 Other searches
 - Quickload B3/B4 same item x2 (QL)
