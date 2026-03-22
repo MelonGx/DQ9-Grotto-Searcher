@@ -1,4 +1,5 @@
-const RANK_NAMES={10:'S',9:'A',8:'B',7:'C',6:'D',5:'E',4:'F',3:'G',2:'H',1:'I'};
+const ALL_MAP_RANKS=[0x02,0x38,0x3D,0x4C,0x51,0x65,0x79,0x8D,0xA1,0xB5,0xC9,0xDD];
+const CHEST_RANK={10:'S',9:'A',8:'B',7:'C',6:'D',5:'E',4:'F',3:'G',2:'H',1:'I'};
 const ENV_NAMES={1:['Caves','洞窟'],2:['Ruins','遺跡'],3:['Ice','氷'],4:['Water','水'],5:['Fire','火山']};
 const BOSS_NAMES={
 1:['Equinox','馬','黒竜丸'],2:['Nemean','爪','ハヌマーン'],3:['Shogum','髭','スライムジェネラル'],4:['Trauminator','機','Sキラーマシン'],
@@ -842,5 +843,17 @@ if(num1<num4)return TableR[TableQ[i3]][1];
 }
 }
 return null;
+}
+getMapBoxCounts(maxFloor=this.floorCount){
+let counts={10:0,9:0,8:0,7:0,6:0,5:0,4:0,3:0,2:0,1:0};
+let total=0;
+for(let f=2;f<maxFloor;f++){
+let boxes=this.getTreasureBoxCount(f);
+for(let b=0;b<boxes;b++){
+counts[this.getTreasureBoxInfo(f,b).rank]++;
+total++;
+}
+}
+return{counts,total};
 }
 }
