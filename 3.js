@@ -330,7 +330,7 @@ else if(conds.anomaly==='corridor'||conds.anomaly==='multi_corridor')jumpToFloor
 else if(conds.anomaly==='multi_region')jumpToFloor=firstMultiRegionFloor;
 else if(conds.anomaly==='chest_corridor')jumpToFloor=(firstChestFloor!==-1)?firstChestFloor:firstCorridorFloor;
 if(jumpToFloor===-1){
-else if(firstNoChestFloor!==-1)jumpToFloor=firstNoChestFloor;
+if(firstNoChestFloor!==-1)jumpToFloor=firstNoChestFloor;
 else if(firstChestFloor!==-1)jumpToFloor=firstChestFloor;
 else if(firstMultiRegionFloor!==-1)jumpToFloor=firstMultiRegionFloor;
 else if(firstCorridorFloor!==-1)jumpToFloor=firstCorridorFloor;
