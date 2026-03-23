@@ -319,9 +319,9 @@ queue.push({x:nx,y:ny});
 }
 }
 let hasInaccessibleChest=false;
-let boxes=engine.getTreasureBoxCount(f);
+let boxes=engine.getBoxCount(f);
 for(let b=0;b<boxes;b++){
-let box=engine.getTreasureBoxInfo(f,b);
+let box=engine.getBoxInfo(f,b);
 if(!visited[box.y][box.x]){hasInaccessibleChest=true;break;}
 }
 let isolatedRegions=[];

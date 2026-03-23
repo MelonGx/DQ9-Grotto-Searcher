@@ -135,7 +135,7 @@ const h=mapData.getFloorHeight(f);
 const map=mapData.getFloorMap(f);
 const up=mapData.getUpStair(f);
 const down=mapData.getDownStair(f);
-const boxCount=mapData.getTreasureBoxCount(f);
+const boxCount=mapData.getBoxCount(f);
 const canvasW=w*TILE_SIZE;
 const canvasH=h*TILE_SIZE;
 let infoHtml='<div class="floor-info">';
@@ -154,7 +154,7 @@ infoHtml+=`<tr><td style="padding:6px 10px;border-bottom:1px solid #222;color:#8
 if(boxCount>0){
 infoHtml+=`<tr><td>Chest</td><td>${boxCount}<font color=666666>(Tap to see Chest Timer)</font></td></tr>`;
 for(let i=0;i<boxCount;i++){
-const box=mapData.getTreasureBoxInfo(f,i);
+const box=mapData.getBoxInfo(f,i);
 const rn=CHEST_RANK[box.rank]||box.rank;
 const soloEN=mapData.getBoxItem(f,i,1)||'?';
 const soloJP=mapData.getBoxItemJP(f,i,1)||'?';
@@ -200,7 +200,7 @@ coordEl.textContent='';
 });
 const boxPositions=new Map();
 for(let i=0;i<boxCount;i++){
-const b=mapData.getTreasureBoxInfo(f,i);
+const b=mapData.getBoxInfo(f,i);
 boxPositions.set(b.x+','+b.y,i+1);
 }
 mapCanvas.addEventListener('click',(e)=>{
@@ -269,7 +269,7 @@ function showChestTimer(floorIndex,boxIndex,x,y){
 const modal=document.getElementById('chestModal');
 const title=document.getElementById('chestModalTitle');
 const body=document.getElementById('chestModalBody');
-const boxInfo=mapData.getTreasureBoxInfo(floorIndex,boxIndex);
+const boxInfo=mapData.getBoxInfo(floorIndex,boxIndex);
 const rn=CHEST_RANK[boxInfo.rank]||boxInfo.rank;
 title.textContent=`B${floorIndex+1}F Chest ${boxIndex+1}(Rank ${rn})@(${x},${y})`;
 let results=[];

@@ -783,8 +783,8 @@ getFloorWidth(f){return this.di[f][2];}
 getFloorHeight(f){return this.di[f][3];}
 getUpStair(f){return{x:this.di[f][4],y:this.di[f][5]};}
 getDownStair(f){return{x:this.di[f][6],y:this.di[f][7]};}
-getTreasureBoxCount(f){return this.di[f][8];}
-getTreasureBoxInfo(f,i){
+getBoxCount(f){return this.di[f][8];}
+getBoxInfo(f,i){
 const d=this.di[f];
 return{rank:d[9+i],x:d[i*2+13],y:d[i*2+14]};
 }
@@ -845,7 +845,8 @@ let counts={
 2:this._details2[1],
 1:this._details2[0]
 };
-let total=this._details2[0]+this._details2[1]+this._details2[2]+this._details2[3]+this._details2[4]+this._details2[5]+this._details2[6]+this._details2[7]+this._details2[8]+this._details2[9];
+let total=0;
+for(let i=0;i<10;i++)total+=this._details2[i];
 return{counts,total};
 }
 }

@@ -58,6 +58,19 @@ if(!bqFound)return false;
 }
 return true;
 }
+function ChestHtml(engine,conds){
+if(!conds.hasBoxCond)return{isMatch:true,html:""};
+let boxStr=[];
+for(let r=10;r>=1;r--){
+if(conds.reqBox[r]>0){
+if(engine._details2[r-1]!==conds.reqBox[r])return{isMatch:false,html:""};
+boxStr.push(`${CHEST_RANK[r]}${conds.reqBox[r]}`);
+}
+}return{
+isMatch:true,
+html:`<div style="margin-top:4px;"><span style="color:#ffcc00;font-size:11px;background:#442200;padding:2px 4px;border-radius:3px;">${boxStr.join(' ')}</span></div>`
+};
+}
 async function startUltimateSearch(){
 if(isSearching){searchCancel=true;return;}
 const conds=getUltimateConds();
@@ -148,7 +161,6 @@ let hitCount=0;
 let searchEngine=new GrottoDetail();
 let targetLocNum=conds.location?parseInt(conds.location,16):null;
 let targetBqNum=conds.bq?parseInt(conds.bq):null;
-const rankNames={10:'S',9:'A',8:'B',7:'C',6:'D',5:'E',4:'F',3:'G',2:'H',1:'I'};
 let fragment=document.createDocumentFragment();
 try{
 for(let rank of ranksToSearch){
@@ -157,8 +169,8 @@ let rStr=rank.toString(16).toUpperCase().padStart(2,'0');
 let targetRankKey=RANKS[rStr]?rStr:(RANKS["0x"+rStr]?"0x"+rStr:null);
 for(let seed=0;seed<=maxSeed;seed++){
 if(searchCancel)break;
-if(seed % 250===0){
-progressSpan.textContent=Math.floor((processed/totalCombos)*100)+'% (Rank '+rStr+',Seed '+seed.toString(16).toUpperCase().padStart(4,'0')+') ['+hitCount+' found]';
+if(seed%250===0){
+progressSpan.textContent=Math.floor((processed/totalCombos)*100)+'% (Rank '+rStr+', Seed '+seed.toString(16).toUpperCase().padStart(4,'0')+') ['+hitCount+' found]';
 if(fragment.children.length>0)grid.appendChild(fragment);
 await new Promise(r=>setTimeout(r,0));
 }
@@ -196,10 +208,11 @@ const needMapGeneration=hasBoxCond||conds.elist||conds.onlyMon||searchOnlyWithD|
 if(needMapGeneration){
 searchEngine.cDungeonDetail();
 }
+let boxHtml="";
 if(match&&hasBoxCond){
-for(let r=10;r>=1;r--){
-if(reqBox[r]>0&&searchEngine._details2[r-1]!==reqBox[r]){match=false;break;}
-}
+let chestResult=ChestHtml(searchEngine,conds);
+if(!chestResult.isMatch)match=false;
+else boxHtml=chestResult.html;
 }
 let specialHitDetails=[];
 let jumpToFloor=-1;
@@ -299,7 +312,7 @@ if(anom.totalChests===1){
 hasAnyNoChestAnomaly=true;
 anomalyDetails.push(`<span style="color:#00ffff;font-size:11px;font-weight:bold;background:#004466;padding:1px 4px;border-radius:3px;border:1px solid #0088aa;">B${f+1}F No Chest</span>`);
 if(firstNoChestFloor===-1)firstNoChestFloor=f;
-}else{anomalyDetails.push(`<span style="color:#ff4444;font-size:11px;font-weight:bold;">B${f+1}F Nipple</span>`);
+}else{anomalyDetails.push(`<span style="color:#ff69b4;font-size:11px;font-weight:bold;">B${f+1}F Nipple (inaccessible chest)</span>`);
 }if(firstChestFloor===-1)firstChestFloor=f;
 }
 if(anom.hasIsolatedCorridor){
@@ -309,8 +322,8 @@ if(anom.isolatedRegions.length>=2){
 hasAnyMultiRegionAnomaly=true;
 if(firstMultiRegionFloor===-1)firstMultiRegionFloor=f;
 }
-let countBadges=anom.isolatedRegions.map(size=>`<span style="background:#FF69B4;color:#fff;padding:1px 4px;border-radius:3px;font-size:10px;margin-left:4px;box-shadow:1px 1px 2px rgba(0,0,0,0.5);">${size}</span>`).join('');
-anomalyDetails.push(`<span style="color:#ffaa00;font-size:11px;">B${f+1}F Chamber ${countBadges}</span>`);
+let countBadges=anom.isolatedRegions.map(size=>`<span style="background:#ff6ec7;color:#fff;padding:1px 4px;border-radius:3px;font-size:10px;margin-left:4px;box-shadow:1px 1px 2px rgba(0,0,0,0.5);">${size}</span>`).join('');
+anomalyDetails.push(`<span style="color:#ffaa00;font-size:11px;">B${f+1}F Chamber${countBadges}</span>`);
 if(firstCorridorFloor===-1)firstCorridorFloor=f;
 }
 if(anom.hasInaccessibleChest && anom.hasIsolatedCorridor){
@@ -355,23 +368,16 @@ matchedLocs.push(locHex);
 }
 }
 if(matchedLocs.length>0){
-locHtml=`<br><span style="color:#aaa;font-size:11px;background:#222;padding:1px 4px;border-radius:3px;margin-top:2px;display:inline-block;">Loc:<span style="color:#fff;">${matchedLocs.join(' / ')}</span></span>`;
+locHtml=`<span style="margin-left:4px;color:#ccc;font-size:10px;background:#222;padding:1px 4px;border-radius:3px;">${matchedLocs.join(' / ')}</span>`;
 }
 }
-let detailsStr=[];
-if(conds.lv)detailsStr.push(`Lv${searchEngine.mapLevel}`);
-if(conds.env)detailsStr.push(searchEngine.mapTypeName);
-let detailsHtml=detailsStr.length>0?`<span style="color:#aaa;font-size:10px">(${detailsStr.join(' / ')})</span>`:'';
-let boxStr=[];
-for(let r=10;r>=1;r--)if(reqBox[r]>0)boxStr.push(`${rankNames[r]}x${reqBox[r]}`);
 let specialHtml=specialHitDetails.length>0?`<div style="margin-top:4px;">${specialHitDetails.map(s=>`<span style="color:#ffccff;font-size:11px">${s}</span>`).join('<br>')}</div>`:'';
-let boxHtml=boxStr.length>0?`<div style="margin-top:4px;"><span style="color:#ffcc00;font-size:11px;background:#442200;padding:2px 4px;border-radius:3px;display:inline-block;">Chest: ${boxStr.join(',')}</span></div>`:'';
 let anomalyHtml=anomalyDetails.length>0?`<div style="margin-top:4px;">${anomalyDetails.join('<br>')}</div>`:'';
 itemNode.innerHTML=`
 <span style="color:#ffd700;font-weight:bold">${seed.toString(16).toUpperCase().padStart(4,'0')}</span> 
 <span style="color:#888">(Rank ${rStr})</span><br>
-<span style="color:#00ffff;font-size:11px">${searchEngine.mapName}</span>${detailsHtml}
-${boxHtml}${locHtml}
+<span style="color:#00ffff;font-size:11px">${searchEngine.mapName}</span>${locHtml}
+${boxHtml}
 ${specialHtml}
 ${anomalyHtml}
 `;

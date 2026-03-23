@@ -62,7 +62,7 @@ let targetRankKey=RANKS[rStr]?rStr:(RANKS["0x"+rStr]?"0x"+rStr:(RANKS[rank]?rank
 for(let seed=0;seed<=maxSeed;seed++){
 if(searchCancel)break;
 if(seed % 250===0){
-progressSpan.textContent=Math.floor((processed / totalCombos)* 100)+'% (Search Rank '+rStr+',Seed '+seed.toString(16).toUpperCase().padStart(4,'0')+') ['+hitCount+' found]';
+progressSpan.textContent=Math.floor((processed / totalCombos)* 100)+'% (Search Rank '+rStr+', Seed '+seed.toString(16).toUpperCase().padStart(4,'0')+') ['+hitCount+' found]';
 if(fragment.children.length>0)grid.appendChild(fragment);
 await new Promise(r=>setTimeout(r,0));
 }
@@ -72,17 +72,9 @@ searchEngine.calculateDetail(true);
 if(config.checkBasicReq &&!config.checkBasicReq(searchEngine,conds)){processed++;continue;}
 if(!checkUltimateCondsMatch(searchEngine,seed,targetRankKey,conds,searchFilterLoc)){processed++;continue;}
 searchEngine.cDungeonDetail();
-let boxHtml="";
-if(conds.hasBoxCond){
-let boxStr=[];
-let boxMatch=true;
-for (let r=10;r>=1;r--){
-if(conds.reqBox[r]>0&&searchEngine._details2[r-1]!==conds.reqBox[r]){boxMatch=false;break;}
-if(conds.reqBox[r]>0)boxStr.push(`${CHEST_RANK[r]}x${conds.reqBox[r]}`);
-}
-if(!boxMatch){processed++;continue;} 
-boxHtml=`<br><span style="color:#ffcc00;font-size:11px;background:#442200;padding:1px 4px;border-radius:3px;display:inline-block;">Chest: ${boxStr.join(',')}</span>`;
-}
+let chestResult=ChestHtml(searchEngine,conds);
+if(!chestResult.isMatch){processed++;continue;}
+let boxHtml=chestResult.html;
 let hitResult=config.checkDungeon(searchEngine);
 if(hitResult&&hitResult.isHit){
 hitCount++;
@@ -139,7 +131,6 @@ if(btn){btn.textContent=config.btnText;btn.style.background=config.btnBg;btn.sty
 progressSpan.textContent=searchCancel?`Stopped (${hitCount} found)`:`100% (${hitCount} found)`;
 }
 }
-
 function getChestRanksForItems(itemNames){
 const ranks=[];
 for(let r=1;r<=10;r++){
@@ -161,121 +152,129 @@ let minFinalQ=Math.max(2,baseQ+minOffset);
 let maxFinalQ=Math.min(248,baseQ+maxOffset);
 let rStr=rank.toString(16).toUpperCase().padStart(2,'0');
 let rankInfo=RANKS[rStr];
-if(rankInfo&&(maxFinalQ<rankInfo.fqMin||minFinalQ>rankInfo.fqMax)){
-return false;
-}
+if(rankInfo&&(maxFinalQ<rankInfo.fqMin||minFinalQ>rankInfo.fqMax)){return false;}
 } 
 let minSMR=1,maxSMR=9;
 for(let i=0;i<8;i++){
-if(rank>=TableC[i*4]&&rank<=TableC[i*4+1]){
-minSMR=TableC[i*4+2];maxSMR=TableC[i*4+3];break;
-}
+if(rank>=TableC[i*4]&&rank<=TableC[i*4+1]){minSMR=TableC[i*4+2];maxSMR=TableC[i*4+3];break;}
 }
 if(conds&&conds.monster){
 let targetSMR=parseInt(conds.monster);
 if(targetSMR<minSMR||targetSMR>maxSMR)return false;
 }
 if(!chestRankGroups||chestRankGroups.length===0)return true;
-for(let smr=minSMR;smr<=maxSMR;smr++){
-let minChest=TableN[(smr-1)* 4+1];
-let maxChest=TableN[(smr-1)* 4+2];
-let allGroupsMatch=chestRankGroups.every(group=>group.some(r=>r>=minChest&&r<=maxChest));
-if(allGroupsMatch)return true;
+let maxFloorCount=16;
+for(let i=0;i<9;i++){
+if(rank>=TableB[i*4]&&rank<=TableB[i*4+1]){maxFloorCount=TableB[i*4+3];break;}
+}
+if(conds&&conds.depth)maxFloorCount=parseInt(conds.depth);
+let maxNum=Math.min(12,maxSMR+Math.floor((maxFloorCount-1)/4));
+return chestRankGroups.every(group=>{
+return group.some(r=>{
+for(let num=minSMR;num<=maxNum;num++){
+let cMin=TableN[(num-1)*4+1];
+let cMax=TableN[(num-1)*4+2];
+if(r>=cMin&&r<=cMax)return true;
 }
 return false;
 });
+});
+});
 }
-function startSearch(){
-const targetItem=document.getElementById('searchItem').value;
+function QLSearch(isB9F){
+const targetItem=document.getElementById(isB9F?'searchItemB9F':'searchItem').value;
 if(["Cannibox","Mimic","Pandora's box"].includes(targetItem)){
 alert("Sorry! Quickload search is not available for trap monsters.");
 return;
 }
 const b3fThreeItems=["Mini medal","Sage's elixir","Iron nails","Hephaestus' flame"];
-const isMillionaire=targetItem==='Millionaire';
 const millionaireItems=["Hero spear","Pruning knife","Wyrmwand","Wizardly whip","Beast claws","Attribeauty","Heavy hatchet","Megaton hammer","Pentarang","Metal slime sword","Metal slime spear"];
-const reqCount=b3fThreeItems.includes(targetItem)?3:2;
-const targetFloors=b3fThreeItems.includes(targetItem)?[2]:[2,3];
-const checkItems=isMillionaire?millionaireItems:[targetItem];
+const sWeapons=["Stardust sword","Poker","Deft dagger","Bright staff","Gringham whip","Knockout rod","Dragonlord claws","Critical fan","Bad axe","Groundbreaker","Meteorang","Angel's bow"];
+let reqCount,targetFloors,checkItems,btnConfig;
+if(isB9F){
+reqCount=2;
+targetFloors=[8];
+checkItems=(targetItem==='S weapon')?sWeapons:[targetItem];
+btnConfig={id:'searchBtnB9F',text:'B9F',bg:'linear-gradient(135deg,#4488ff,#0044aa)'};
+}else{
+reqCount=b3fThreeItems.includes(targetItem)?3:2;
+targetFloors=b3fThreeItems.includes(targetItem)?[2]:[2, 3];
+checkItems=(targetItem==='Millionaire')?millionaireItems:[targetItem];
+btnConfig={id:'searchBtn',text:'QL',bg:'linear-gradient(135deg,#44cc44,#008800)'};
+}
 const chestRanks=getChestRanksForItems(checkItems);
 executeCustomSearch({
-btnId:'searchBtn',btnText:'QL',btnBg:'linear-gradient(135deg,#44cc44,#008800)',
-filterRanks:(ranks,conds)=>filterMapRanksBySMRAndChest(ranks,conds,[chestRanks]),
-checkBasicReq:(eng,conds)=>eng.floorCount>=3&&filterMapRanksBySMRAndChest([eng.MapRank],conds,[chestRanks]).length>0,
+btnId:btnConfig.id,btnText:btnConfig.text,btnBg:btnConfig.bg,
+filterRanks:(ranks,conds)=>filterMapRanksBySMRAndChest(ranks,conds,[chestRanks],isB9F?2:0),
+checkBasicReq:(eng,conds)=>eng.floorCount>=(isB9F?9:3)&&filterMapRanksBySMRAndChest([eng.MapRank],conds,[chestRanks],isB9F?2:0).length>0,
 checkDungeon:(eng)=>{
 let hitTypes=[];
 let firstHitFloor=-1;
 for(let f of targetFloors){
 if(f>=eng.floorCount)continue;
-let soloC=0,partyC=0,boxes=eng.getTreasureBoxCount(f);
+let soloC=0,partyC=0,boxes=eng.getBoxCount(f);
 for(let b=0;b<boxes;b++){
 if(checkItems.includes(eng.getBoxItem(f,b,1)))soloC++;
 if(checkItems.includes(eng.getBoxItem(f,b,2)))partyC++;
 }
-if(soloC>=reqCount||partyC>=reqCount){if(firstHitFloor===-1)firstHitFloor=f;}
-if(soloC>=reqCount)hitTypes.push(`B${f+1}F Solo x${soloC}`);
-if(partyC>=reqCount)hitTypes.push(`B${f+1}F Party x${partyC}`);
+if(soloC>=reqCount||partyC>=reqCount){if(firstHitFloor===-1) firstHitFloor=f; }
+if(soloC>=reqCount)hitTypes.push(`${isB9F?'':`B${f+1}F `}Solo x${soloC}`);
+if(partyC>=reqCount)hitTypes.push(`${isB9F?'':`B${f+1}F `}Party x${partyC}`);
 }
 if(hitTypes.length>0){
-return{isHit:true,jumpFloor:firstHitFloor,displayHtml:`<span style="color:#44cc44;font-size:11px">${hitTypes.join('<br>')}</span>`};
+let displayPrefix=isB9F?'<span style="color:#4488ff;font-size:11px">B9F ':'<span style="color:#44cc44;font-size:11px">';
+let joinStr=isB9F?' / ':'<br>';
+return{isHit:true,jumpFloor:firstHitFloor,displayHtml:`${displayPrefix}${hitTypes.join(joinStr)}</span>`};
 }
 return{isHit:false};
 }
 });
 }
-function startSearchBox3(){
+function startSearch(){QLSearch(false);}
+function startSearchB9F(){QLSearch(true);}
+function Chest3Search(isS3){
+let checkItems,btnConfig,targetFloors,colorStyle;
+if(isS3){
+checkItems=["Sage's elixir","Sainted soma"];
+targetFloors=[12,13];
+btnConfig={id:'searchBtnBox3_S',text:'S3',bg:'linear-gradient(135deg,#ffaa00,#cc6600)'};
+colorStyle='#ffaa00';
+}else{
 const targetItem=document.getElementById('searchItemBox3').value;
-const isMillionaire=targetItem==='Millionaire2';
 const millionaireItems=["Hero spear","Pruning knife","Wyrmwand","Wizardly whip","Beast claws","Attribeauty","Heavy hatchet"];
-const checkItems=isMillionaire?millionaireItems:[targetItem];
-const chestRanks=getChestRanksForItems(checkItems);
+checkItems=(targetItem==='Millionaire2')?millionaireItems:[targetItem];
+targetFloors=[2,3];
+btnConfig={id:'searchBtnBox3',text:'3rd',bg:'linear-gradient(135deg,#cc44cc,#880088)'};
+colorStyle='#cc66cc';
+}
+const chestRanks=isS3?[10]:getChestRanksForItems(checkItems);
 executeCustomSearch({
-btnId:'searchBtnBox3',btnText:'3rd',btnBg:'linear-gradient(135deg,#cc44cc,#880088)',
-filterRanks:(ranks,conds)=>filterMapRanksBySMRAndChest(ranks,conds,[chestRanks]),
-checkBasicReq:(eng,conds)=>eng.floorCount>=4&&filterMapRanksBySMRAndChest([eng.MapRank],conds,[chestRanks]).length>0,
+btnId:btnConfig.id,btnText:btnConfig.text,btnBg:btnConfig.bg,
+filterRanks:(ranks,conds)=>filterMapRanksBySMRAndChest(ranks,conds,[chestRanks],isS3?3:0),
+checkBasicReq:(eng,conds)=>eng.floorCount>=(isS3?14:4)&&filterMapRanksBySMRAndChest([eng.MapRank],conds,[chestRanks],isS3?3:0).length>0,
 checkDungeon:(eng)=>{
-if(eng.getTreasureBoxCount(2)>=3&&eng.getTreasureBoxCount(3)>=3){
-let p3=eng.getBoxItem(2,2,2);
-let p4=eng.getBoxItem(3,2,2);
-let r3=CHEST_RANK[eng.getTreasureBoxInfo(2,2).rank]||'?';
-let r4=CHEST_RANK[eng.getTreasureBoxInfo(3,2).rank]||'?';
-if(checkItems.includes(p3)&&checkItems.includes(p4)){
-return{isHit:true,jumpFloor:2,displayHtml:`<span style="color:#cc66cc;font-size:11px">B3F ${r3}3: ${p3}<br>B4F ${r4}3: ${p4}</span>`};
+let f1=targetFloors[0],f2=targetFloors[1];
+if(eng.getBoxCount(f1)>=3&&eng.getBoxCount(f2)>=3){
+if(isS3&&(eng.getBoxInfo(f1, 2).rank!==10||eng.getBoxInfo(f2, 2).rank!==10)){
+return{isHit:false};
+}
+let p1=eng.getBoxItem(f1,2,2);
+let p2=eng.getBoxItem(f2,2,2);
+let r1=CHEST_RANK[eng.getBoxInfo(f1,2).rank]||'?';
+let r2=CHEST_RANK[eng.getBoxInfo(f2,2).rank]||'?';
+if(checkItems.includes(p1)&&checkItems.includes(p2)){
+return{
+isHit:true,jumpFloor:f1,
+displayHtml:`<span style="color:${colorStyle};font-size:11px">B${f1+1}F ${r1}3: ${p1}<br>B${f2+1}F ${r2}3: ${p2}</span>`
+};
 }
 }
 return{isHit:false};
 }
 });
 }
-function startSearchB9F(){
-const targetItem=document.getElementById('searchItemB9F').value;
-const sWeapons=["Stardust sword","Poker","Deft dagger","Bright staff","Gringham whip","Knockout rod","Dragonlord claws","Critical fan","Bad axe","Groundbreaker","Meteorang","Angel's bow"];
-const checkItems=(targetItem==='S weapon')?sWeapons:[targetItem];
-executeCustomSearch({
-btnId:'searchBtnB9F',btnText:'B9F',btnBg:'linear-gradient(135deg,#4488ff,#0044aa)',
-filterRanks:(ranks)=>ranks.filter(rank=>{
-for(let i=0;i<8;i++){
-if(rank>=TableC[i*4]&&rank<=TableC[i*4+1])return TableC[i*4+3]>=9;
-}
-return false;
-}),
-checkBasicReq:(eng)=>eng.monsterRank===9&&eng.floorCount>=9,
-checkDungeon:(eng)=>{
-let soloC=0,partyC=0,boxes=eng.getTreasureBoxCount(8);
-for(let b=0;b<boxes;b++){
-if(checkItems.includes(eng.getBoxItem(8,b,1)))soloC++;
-if(checkItems.includes(eng.getBoxItem(8,b,2)))partyC++;
-}
-if(soloC>=2||partyC>=2){
-let hitTypes=[];
-if(soloC>=2)hitTypes.push(`Solo x${soloC}`);
-if(partyC>=2)hitTypes.push(`Party x${partyC}`);
-return{isHit:true,jumpFloor:8,displayHtml:`<span style="color:#4488ff;font-size:11px">B9F ${hitTypes.join(' / ')}</span>`};
-}
-return{isHit:false};
-}
-});
-}
+function startSearchBox3(){Chest3Search(false);}
+function startSearchBox3_S(){Chest3Search(true);}
 function startSearchSoma(){
 executeCustomSearch({
 btnId:'searchBtnSoma',btnText:'J-Fire',btnBg:'linear-gradient(135deg,#77aacc,#cc00aa)',
@@ -287,7 +286,7 @@ return false;
 }),
 checkBasicReq:(eng)=>eng.monsterRank===9&&eng.floorCount>=9,
 checkDungeon:(eng)=>{
-let b9Boxes=eng.getTreasureBoxCount(8);
+let b9Boxes=eng.getBoxCount(8);
 let c1Met=false,c1Det="";
 for(let b=0;b<Math.min(2,b9Boxes);b++){
 let s=eng.getBoxItem(8,b,1),p=eng.getBoxItem(8,b,2);
@@ -300,7 +299,7 @@ c1Det=`B9F S${b+1} Soma (${t})`;break;
 if(!c1Met||(b9Boxes>=3&&eng.getBoxItem(8,2,2)==="Sainted soma"))return{isHit:false};
 let c2Met=false,c2Det="";
 const chk3=(fIdx,n)=>{
-if(eng.getTreasureBoxCount(fIdx)>=3&&eng.getTreasureBoxInfo(fIdx,2).rank===10){
+if(eng.getBoxCount(fIdx)>=3&&eng.getBoxInfo(fIdx,2).rank===10){
 let pItem=eng.getBoxItem(fIdx,2,2);
 if(pItem==="Sainted soma"||pItem==="Sage's elixir"){
 return{met:true,det:`${n} S3 ${pItem==="Sainted soma"?"Soma":"Sage's elixir"}`};
@@ -316,37 +315,6 @@ if(b10Res.met){c2Met=true;c2Det=b10Res.det;}
 }
 if(c1Met&&c2Met){
 return{isHit:true,jumpFloor:8,displayHtml:`<span style="color:#ff88aa;font-size:11px">${c1Det}</span><br><span style="color:#44cc44;font-size:11px">${c2Det}</span>`};
-}
-return{isHit:false};
-}
-});
-}
-function startSearchBox3_S(){
-const targetItems=["Sage's elixir","Sainted soma"];
-executeCustomSearch({
-btnId:'searchBtnBox3_S',
-btnText:'S3',
-btnBg:'linear-gradient(135deg,#ffaa00,#cc6600)',
-filterRanks:(ranks)=>ranks.filter(rank=>{
-for(let i=0;i<8;i++){
-if(rank>=TableC[i*4]&&rank<=TableC[i*4+1])return TableC[i*4+3]>=9;
-}
-return false;
-}),
-checkBasicReq:(eng)=>eng.monsterRank===9&&eng.floorCount>=14,
-checkDungeon:(eng)=>{
-if(eng.getTreasureBoxCount(12)>=3&&eng.getTreasureBoxCount(13)>=3){
-if(eng.getTreasureBoxInfo(12,2).rank===10&&eng.getTreasureBoxInfo(13,2).rank===10){
-let p13=eng.getBoxItem(12,2,2);
-let p14=eng.getBoxItem(13,2,2);
-if(targetItems.includes(p13)&&targetItems.includes(p14)){
-return{
-isHit:true,
-jumpFloor:12,
-displayHtml:`<span style="color:#ffaa00;font-size:11px">B13F S3: ${p13}<br>B14F S3: ${p14}</span>` 
-};
-}
-}
 }
 return{isHit:false};
 }
@@ -395,18 +363,18 @@ return;
 let allMatTargets=isMillionaire?broadMatTargets:strictMatTargets;
 executeCustomSearch({
 btnId:'btnMillionaireCombo',btnText:'Combo',btnBg:'linear-gradient(135deg,#ff8800,#cc4400)',
-filterRanks:(ranks,conds)=>filterMapRanksBySMRAndChest(ranks,conds,[getChestRanksForItems(wpTargets),getChestRanksForItems(allMatTargets)]),
+filterRanks:(ranks,conds)=>filterMapRanksBySMRAndChest(ranks,conds,[getChestRanksForItems(wpTargets),getChestRanksForItems(allMatTargets)],0),
 checkBasicReq:(eng,conds)=>eng.floorCount>=3,
 checkDungeon:(eng)=>{
 let wpMet=false,wpDet="",wpFloor=2;
 let checkWp=(fIdx)=>{
 if(fIdx>=eng.floorCount)return false;
-for(let b=0;b<Math.min(2,eng.getTreasureBoxCount(fIdx));b++){
+for(let b=0;b<Math.min(2,eng.getBoxCount(fIdx));b++){
 let s=eng.getBoxItem(fIdx,b,1),p=eng.getBoxItem(fIdx,b,2);
 if(wpTargets.includes(s)||wpTargets.includes(p)){
 let t=(wpTargets.includes(s)&&wpTargets.includes(p))?"Solo+Party":(wpTargets.includes(p)?"Party":"Solo");
 let hitItem=wpTargets.includes(p)?p:s;
-let rName=CHEST_RANK[eng.getTreasureBoxInfo(fIdx,b).rank]||'?';
+let rName=CHEST_RANK[eng.getBoxInfo(fIdx,b).rank]||'?';
 wpDet=`B${fIdx+1}F ${rName}${b+1}: ${hitItem} (${t})`;
 wpMet=true;wpFloor=fIdx;return true;
 }
@@ -416,8 +384,8 @@ return false;
 if(isMonsterBox){
 if(!checkWp(2))return{isHit:false};
 let c1Met=false,matDet="",b3Rank="";
-if(eng.floorCount>2&&eng.getTreasureBoxCount(2)>=3){
-b3Rank=CHEST_RANK[eng.getTreasureBoxInfo(2,2).rank]||'?';
+if(eng.floorCount>2&&eng.getBoxCount(2)>=3){
+b3Rank=CHEST_RANK[eng.getBoxInfo(2,2).rank]||'?';
 let foundSec=-1;
 for(let s=minSec;s<=maxSec;s++){
 if(eng.getBoxItem(2,2,s)===targetItem){
@@ -445,9 +413,9 @@ let currentB3Targets=isMillionaire?(wpFloor===2?strictMatTargets:broadMatTargets
 let currentB4Targets=isMillionaire?(wpFloor===3?strictMatTargets:broadMatTargets):strictMatTargets;
 let checkSec=isMillionaire?2:8;
 let labelText=isMillionaire?"":"(13s)";
-if(eng.floorCount>2&&eng.getTreasureBoxCount(2)>=3){
+if(eng.floorCount>2&&eng.getBoxCount(2)>=3){
 pB3=eng.getBoxItem(2,2,checkSec);
-b3Rank=CHEST_RANK[eng.getTreasureBoxInfo(2,2).rank]||'?';
+b3Rank=CHEST_RANK[eng.getBoxInfo(2,2).rank]||'?';
 if(currentB3Targets.includes(pB3)){
 let pB3_25s=eng.getBoxItem(2,2,20);
 if(!isMillionaire){
@@ -457,9 +425,9 @@ if(!strictMatTargets.includes(pB3_25s))b3V=true;
 }
 }
 }
-if(eng.floorCount>3&&eng.getTreasureBoxCount(3)>=3){
+if(eng.floorCount>3&&eng.getBoxCount(3)>=3){
 pB4=eng.getBoxItem(3,2,checkSec);
-b4Rank=CHEST_RANK[eng.getTreasureBoxInfo(3,2).rank]||'?';
+b4Rank=CHEST_RANK[eng.getBoxInfo(3,2).rank]||'?';
 if(currentB4Targets.includes(pB4)){
 let pB4_25s=eng.getBoxItem(3,2,20);
 if(!isMillionaire){
@@ -655,7 +623,9 @@ resultDiv.innerHTML='<div style="color:#aaa;font-size:13px;margin-bottom:8px">Pr
 const grid=document.getElementById('searchGrid');
 const progressSpan=document.getElementById('searchProgress');
 let ranksToSearch=searchAllRanks?ALL_MAP_RANKS:[parseInt(baseRankStr)];
-if(cond_only_mon||conds.monster||conds.bq){
+
+
+if(cond_only_mon||conds.monster||conds.bq||conds.hasBoxCond){
 ranksToSearch=ranksToSearch.filter(rank=>{
 if(conds.bq){
 let baseQ=parseInt(conds.bq);
@@ -677,6 +647,21 @@ if(rank>=TableC[i*4]&&rank<=TableC[i*4+1]){
 minSMR=TableC[i*4+2];maxSMR=TableC[i*4+3];break;
 }
 }
+if(conds.hasBoxCond){
+let forknum=Math.min(12,maxSMR+3);
+for(let r=10;r>=1;r--){
+if(conds.reqBox[r]>0){
+let canDrop=false;
+for(let num=minSMR;num<=forknum;num++){
+let cMin=TableN[(num-1)*4+1];
+let cMax=TableN[(num-1)*4+2];
+if(r>=cMin&&r<=cMax){canDrop=true;break;}
+}
+if(!canDrop)return false;
+}
+}
+}
+if(!cond_only_mon&&!conds.monster)return true;
 if(conds.monster){
 let tgt=parseInt(conds.monster);
 if(tgt<minSMR||tgt>maxSMR)return false;
@@ -726,7 +711,7 @@ let targetRankKey=RANKS[rStr]?rStr:(RANKS["0x"+rStr]?"0x"+rStr:null);
 for(let seed=minSeed;seed<=maxSeed;seed++){
 if(searchCancel)break;
 if(processed % 200===0){
-progressSpan.textContent=Math.floor((processed / totalCombos)* 100)+'% (Rank '+rStr+',Seed '+seed.toString(16).toUpperCase().padStart(4,'0')+') ['+hitCount+' found]';
+progressSpan.textContent=Math.floor((processed / totalCombos)* 100)+'% (Rank '+rStr+', Seed '+seed.toString(16).toUpperCase().padStart(4,'0')+') ['+hitCount+' found]';
 if(fragment.children.length>0)grid.appendChild(fragment);
 await new Promise(r=>setTimeout(r,0));
 }
@@ -758,14 +743,23 @@ searchEngine._force_16_floors=true;
 searchEngine.calculateDetail();
 let boxHtml="";
 if(conds.hasBoxCond){
-let boxStr=[];
+let actualBoxCounts={10:0,9:0,8:0,7:0,6:0,5:0,4:0,3:0,2:0,1:0};
+for(let f=2;f<bugFloors;f++){
+let boxes=searchEngine.di[f][8];
+for(let b=0;b<boxes;b++){
+actualBoxCounts[searchEngine.di[f][9+b]]++;
+}
+}
 let boxMatch=true;
+let boxStr=[];
 for(let r=10;r>=1;r--){
-if(conds.reqBox[r]>0&&searchEngine._details2[r-1]!==conds.reqBox[r]){boxMatch=false;break;}
-if(conds.reqBox[r]>0)boxStr.push(`${CHEST_RANK[r]}x${conds.reqBox[r]}`);
+if(conds.reqBox[r]>0){
+if(actualBoxCounts[r]!==conds.reqBox[r]){boxMatch=false;break;}
+boxStr.push(`${CHEST_RANK[r]}${conds.reqBox[r]}`);
+}
 }
 if(!boxMatch){processed++;continue;}
-boxHtml=`<br><span style="color:#ffcc00;font-size:11px;background:#442200;padding:1px 4px;border-radius:3px;margin-top:2px;display:inline-block;">Chests:${boxStr.join(',')}</span>`;
+boxHtml=`<div style="margin-top:4px;"><span style="color:#ffcc00;font-size:11px;background:#442200;padding:2px 4px;border-radius:3px;">${boxStr.join(' ')}</span></div>`;
 }
 let foundSpecialFloors=[];
 let specialHitCount=0;
