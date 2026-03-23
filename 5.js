@@ -13,6 +13,9 @@ const WALL_COLOR='#000000';
 let mapData=null;
 let activeFloor=0;
 function calculate(){
+const safeZone=document.getElementById('controls_container');
+const controlsDiv=document.getElementById('single_map_controls');
+if(safeZone&&controlsDiv){safeZone.appendChild(controlsDiv);}
 const seedStr=document.getElementById('seed').value.trim();
 const seed=parseInt(seedStr,16);
 const rank=parseInt(document.getElementById('rank').value);
@@ -28,11 +31,6 @@ activeFloor=0;
 renderResult();
 }
 function renderResult(){
-const safeZone=document.getElementById('controls_container');
-const controlsDiv=document.getElementById('single_map_controls');
-if(safeZone&&controlsDiv){
-safeZone.appendChild(controlsDiv);
-}
 const el=document.getElementById('result');
 if(!mapData||mapData.floorCount===0){
 el.innerHTML='<div class="error">Invalid Seed/Rank</div>';
@@ -348,11 +346,83 @@ listJP.style.display='block';
 listEN.style.display='none';
 }
 }
-let isModalDragging=false;
-function closeChestModal(e){
-if(e&&e.target!==e.currentTarget)return;
+function closeChestModal(){
 const modal=document.getElementById('chestModal');
 if(modal)modal.style.display='none';
+}
+function openDisclaimerModal(){
+const modal=document.getElementById('disclaimerModal');
+if(modal){
+modal.style.display='flex';
+switchDisclaimerTab('EN');
+}
+}
+function closeDisclaimerModal(){
+const modal=document.getElementById('disclaimerModal');
+if(modal)modal.style.display='none';
+}
+function switchDisclaimerTab(lang){
+const tabs={
+'TW':document.getElementById('discTabTW'),
+'EN':document.getElementById('discTabEN'),
+'JP':document.getElementById('discTabJP')
+};
+const lists={
+'TW':document.getElementById('discListTW'),
+'EN':document.getElementById('discListEN'),
+'JP':document.getElementById('discListJP')
+};
+for(let key in tabs){
+if(!tabs[key])continue;
+if(key===lang){
+tabs[key].style.background='#1a1a3a';
+tabs[key].style.color='#ffd700';
+tabs[key].style.borderColor='#4a4a8a';
+lists[key].style.display='block';
+}else{
+tabs[key].style.background='#222244';
+tabs[key].style.color='#888';
+tabs[key].style.borderColor='#333';
+lists[key].style.display='none';
+}
+}
+}
+function openHelpModal(){
+const modal=document.getElementById('helpModal');
+if(modal){
+modal.style.display='flex';
+switchHelpTab('EN');
+}
+}
+function closeHelpModal(){
+const modal=document.getElementById('helpModal');
+if(modal)modal.style.display='none';
+}
+function switchHelpTab(lang){
+const tabs={
+'TW':document.getElementById('helpTabTW'),
+'EN':document.getElementById('helpTabEN'),
+'JP':document.getElementById('helpTabJP')
+};
+const lists={
+'TW':document.getElementById('helpListTW'),
+'EN':document.getElementById('helpListEN'),
+'JP':document.getElementById('helpListJP')
+};
+for(let key in tabs){
+if(!tabs[key])continue;
+if(key===lang){
+tabs[key].style.background='#1a1a3a';
+tabs[key].style.color='#00ffff';
+tabs[key].style.borderColor='#4a4a8a';
+lists[key].style.display='block';
+}else{
+tabs[key].style.background='#222244';
+tabs[key].style.color='#888';
+tabs[key].style.borderColor='#333';
+lists[key].style.display='none';
+}
+}
 }
 window.addEventListener('DOMContentLoaded',()=>{
 function populateDropdownObj(selectId,dataObj,nameIdx1,nameIdx2){
@@ -419,100 +489,17 @@ rankSelect.addEventListener('change',()=>{
 if(mapData)calculate();
 });
 }
-const chestModal=document.getElementById('chestModal');
-if(chestModal){
-chestModal.addEventListener('mousedown',(e)=>{
-isModalDragging=(e.target!==chestModal);
-});
-chestModal.addEventListener('mouseup',(e)=>{
-if(!isModalDragging&&e.target===chestModal){
-closeChestModal();
-}
-});
-}
 calculate();
 });
-function openDisclaimerModal(){
-const modal=document.getElementById('disclaimerModal');
-if(modal){
-modal.style.display='flex';
-switchDisclaimerTab('EN');
-}
-}
-function closeDisclaimerModal(e){
-if(e&&e.target!==e.currentTarget)return;
-const modal=document.getElementById('disclaimerModal');
-if(modal)modal.style.display='none';
-}
-function switchDisclaimerTab(lang){
-const tabs={
-'TW':document.getElementById('discTabTW'),
-'EN':document.getElementById('discTabEN'),
-'JP':document.getElementById('discTabJP')
-};
-const lists={
-'TW':document.getElementById('discListTW'),
-'EN':document.getElementById('discListEN'),
-'JP':document.getElementById('discListJP')
-};
-for(let key in tabs){
-if(!tabs[key])continue;
-if(key===lang){
-tabs[key].style.background='#1a1a3a';
-tabs[key].style.color='#ffd700';
-tabs[key].style.borderColor='#4a4a8a';
-lists[key].style.display='block';
-}else{
-tabs[key].style.background='#222244';
-tabs[key].style.color='#888';
-tabs[key].style.borderColor='#333';
-lists[key].style.display='none';
-}
-}
-}
-function openHelpModal(){
-const modal=document.getElementById('helpModal');
-if(modal){
-modal.style.display='flex';
-switchHelpTab('EN');
-}
-}
-function closeHelpModal(e){
-if(e&&e.target!==e.currentTarget)return;
-const modal=document.getElementById('helpModal');
-if(modal)modal.style.display='none';
-}
-function switchHelpTab(lang){
-const tabs={
-'TW':document.getElementById('helpTabTW'),
-'EN':document.getElementById('helpTabEN'),
-'JP':document.getElementById('helpTabJP')
-};
-const lists={
-'TW':document.getElementById('helpListTW'),
-'EN':document.getElementById('helpListEN'),
-'JP':document.getElementById('helpListJP')
-};
-for(let key in tabs){
-if(!tabs[key])continue;
-if(key===lang){
-tabs[key].style.background='#1a1a3a';
-tabs[key].style.color='#00ffff';
-tabs[key].style.borderColor='#4a4a8a';
-lists[key].style.display='block';
-}else{
-tabs[key].style.background='#222244';
-tabs[key].style.color='#888';
-tabs[key].style.borderColor='#333';
-lists[key].style.display='none';
-}
-}
-}
+let isModalDragging=false;
+const allModalIds=['chestModal','disclaimerModal','helpModal'];
 window.addEventListener('mousedown',(e)=>{
-let helpModal=document.getElementById('helpModal');
-let discModal=document.getElementById('disclaimerModal');
-if(helpModal&&e.target===helpModal)isModalDragging=true;
-if(discModal&&e.target===discModal)isModalDragging=true;
+if(allModalIds.includes(e.target.id)){isModalDragging=false;}
+else{isModalDragging=true;}
+});
+window.addEventListener('mouseup',(e)=>{
+if(!isModalDragging&&allModalIds.includes(e.target.id)){e.target.style.display='none';}
+isModalDragging=false;
 });
 function exportSearchResults(){
 try{
