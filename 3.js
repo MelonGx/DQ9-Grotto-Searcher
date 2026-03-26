@@ -37,7 +37,7 @@ const endSeed=searchFilterLoc?Math.min(customMax,0x7FFF):customMax;
 if(startSeed>endSeed){
 return{error:A09};
 }
-return {startSeed,endSeed,searchFilterLoc};
+return{startSeed,endSeed,searchFilterLoc};
 }
 function getUltimateConds(){
 const reqBox={
@@ -72,7 +72,7 @@ reqBox:reqBox,
 hasBoxCond:Object.values(reqBox).some(v=>v>0)
 };
 }
-function checkUltimateCondsMatch(engine,seed,targetRankKey,conds,searchFilterLoc){
+function checkUltimateCondsMatch(engine,seed,targetRankKey,conds){
 _cachedLocData=null;
 if(conds.prefix&&engine._details[5]!=conds.prefix) return false;
 if(conds.suffix&&engine._details[6]!=conds.suffix) return false;
@@ -82,11 +82,9 @@ if(conds.env&&engine._details[3]!=conds.env) return false;
 if(conds.monster&&engine._details[2]!=conds.monster) return false;
 if(conds.depth&&engine._details[1]!=conds.depth) return false;
 if(conds.boss&&engine._details[0]!=conds.boss) return false;
-
 let targetLocNum=conds.location?parseInt(conds.location, 16):null;
 let targetBqNum=conds.bq?parseInt(conds.bq):null;
-
-if(targetLocNum!==null||targetBqNum!==null||searchFilterLoc){
+if(targetLocNum!==null||targetBqNum!==null){
 if(targetRankKey!==null&&typeof calcLocations==='function'){
 let locData=calcLocations(seed, targetRankKey);
 _cachedLocData=locData;
@@ -163,7 +161,7 @@ const reqBox=conds.reqBox;
 const hasBasicCond=Object.keys(conds).some(k=>k!=='reqBox'&&k!=='hasBoxCond'&&conds[k]!=="");
 const hasBoxCond=conds.hasBoxCond;
 const searchFilterLoc=true;
-if(!hasBasicCond&&!hasBoxCond&&!searchFilterLoc){
+if(!hasBasicCond&&!hasBoxCond){
 alert(A01);
 return;
 }
