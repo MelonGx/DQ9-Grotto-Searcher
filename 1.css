@@ -30,11 +30,15 @@ button.go:active{transform:scale(0.95)}
 .floor-info h3{color:#ffd700;margin-bottom:12px;font-size:14px;font-family:'Press Start 2P',monospace}
 .floor-info table{width:100%;border-collapse:collapse}
 .floor-info td{padding:6px 10px;border-bottom:1px solid #222;font-size:13px}
-.floor-info td:first-child{color:#8888bb;width:110px;white-space:nowrap}
+.floor-info td:first-child{color:#8888bb;width:100px;white-space:nowrap}
 @media(max-width:600px){
-.floor-info{min-width:0}
-.floor-info td:first-child{width:auto;padding:4px 6px;font-size:12px}
-.floor-info td{padding:4px 6px;font-size:12px}
+.floor-content{flex-direction:column;padding:12px}
+.floor-content>*{margin:0 0 12px 0}
+.map-container{width:fit-content;max-width:100%;overflow-x:auto}
+.floor-info{min-width:0;padding-left:22px}
+.floor-info table{width:92%}
+.floor-info td:first-child{width:auto;padding:4px 8px 4px 12px;font-size:12px}
+.floor-info td{padding:4px 8px;font-size:12px}
 }
 .legend{display:flex;flex-wrap:wrap;margin-top:16px}
 .legend>*{margin:0 12px 4px 0}
